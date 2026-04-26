@@ -1,5 +1,5 @@
 import os
-import google.generativeai as genai
+import google.genai as genai
 from dotenv import load_dotenv
 import tqdm
 import streamlit as st
@@ -7,7 +7,7 @@ import streamlit as st
 
 load_dotenv()
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 _model = "models/gemini-embedding-001"
 
@@ -21,9 +21,9 @@ def get_embeddings(texts, batch_size=20):
     for i in range(0, len(texts), batch_size):
         batch = texts[i:i+batch_size]
 
-        response = genai.embed_content(
-            model=_model,
-            content=batch
+        response = client.models.generate_content(
+            model=_model, # using the latest gemini flash model
+            contents=batch
         )
 
         all_embeddings.extend(response["embedding"])

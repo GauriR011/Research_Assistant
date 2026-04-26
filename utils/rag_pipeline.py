@@ -24,32 +24,6 @@ Question:
 {user_query}
 """
 
-# def format_context(chunks):
-#     context = ""
-#     for chunk in chunks:
-#         context += f"{chunk['text']}\n(Source: {chunk['metadata']['source']})\n\n"
-#     return context
-
-# def format_context(chunks):
-#     context = ""
-#     source_map = {}
-#     source_counter = 1
-
-#     for chunk in chunks:
-#         source = chunk["metadata"]["source"]
-
-#         # Assign number if new source
-#         if source not in source_map:
-#             source_map[source] = source_counter
-#             source_counter += 1
-
-#         ref_id = source_map[source]
-
-#         context += f"{chunk['text']}\n(Ref {ref_id})\n\n"
-
-#     return context, source_map
-
-
 def format_context(chunks):
     context = ""
 
@@ -60,35 +34,6 @@ def format_context(chunks):
     return context
 
 
-# def generate_answer(chunks, query):
-#     context = format_context(chunks)
-
-#     prompt = PROMPT_TEMPLATE.format(
-#         retrieved_chunks=context,
-#         user_query=query
-#     )
-
-#     response = client.models.generate_content(
-#         model="gemini-flash-latest", # using the latest gemini flash model
-#         contents=prompt
-#     )
-
-#     return response.text
-
-# def generate_answer(chunks, query):
-#     context, source_map = format_context(chunks)
-
-#     prompt = PROMPT_TEMPLATE.format(
-#         retrieved_chunks=context,
-#         user_query=query
-#     )
-
-#     response = client.models.generate_content(
-#         model="gemini-flash-latest", # using the latest gemini flash model
-#         contents=prompt
-#     )
-
-#     return response.text, source_map
 
 def generate_answer(chunks, query):
     context = format_context(chunks)
@@ -99,7 +44,7 @@ def generate_answer(chunks, query):
     )
 
     response = client.models.generate_content(
-        model="gemini-flash-latest", # using the latest gemini flash model
+        model= "gemini_flash_latest",# using the latest gemini flash model
         contents=prompt
     )
 
