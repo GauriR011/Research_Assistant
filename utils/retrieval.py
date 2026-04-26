@@ -8,8 +8,12 @@ class VectorStore:
         self.index = faiss.IndexFlatL2(dim)
         self.texts = []
         self.metadata = []
+        self.embeddings = []
 
     def add(self, embeddings, texts, metadatas):
+        assert len(embeddings) == len(texts) == len(metadatas), \
+            f"Mismatch: {len(embeddings)}, {len(texts)}, {len(metadatas)}"
+
         vectors = np.array(embeddings).astype("float32")
         self.index.add(vectors)
 
@@ -22,9 +26,11 @@ class VectorStore:
 
         results = []
         for idx in indices[0]:
+            if idx == -1 or idx >= len(self.texts):
+                continue
             results.append({
                 "text": self.texts[idx],
-                "metadata": self.metadata[idx]
+                "metadata": self.metadata[idx],
             })
 
         return results
@@ -35,19 +41,22 @@ class VectorStore:
         with open(path + ".pkl", "wb") as f:
             pickle.dump({
                 "texts": self.texts,
-                "metadata": self.metadata
+                "metadata": self.metadata,
+                "embeddings": self.embeddings
             }, f)
 
     @classmethod
     def load(cls, path):
+        # Load FAISS index
         index = faiss.read_index(path + ".index")
 
+        # Load metadata
         with open(path + ".pkl", "rb") as f:
             data = pickle.load(f)
 
         store = cls(index.d)
         store.index = index
-        store.texts = data["texts"]
-        store.metadata = data["metadata"]
+        store.texts = data.get("texts", [])
+        store.metadata = data.get("metadata", [])
 
         return store

@@ -44,7 +44,7 @@ def generate_answer(chunks, query):
     )
 
     response = client.models.generate_content(
-        model= "gemini_flash_latest",# using the latest gemini flash model
+        model= "gemini-flash-latest",# using the latest gemini flash model
         contents=prompt
     )
 

@@ -17,16 +17,22 @@ def get_embeddings(texts, batch_size=20):
 
     total_batches = len(texts) // batch_size + 1
 
-    # adding a progress bar for pdf processing
     for i in range(0, len(texts), batch_size):
         batch = texts[i:i+batch_size]
 
-        response = client.models.generate_content(
-            model=_model, # using the latest gemini flash model
+        response = client.models.embed_content(
+            model=_model,
             contents=batch
         )
 
-        all_embeddings.extend(response["embedding"])
+        batch_embeddings = [e.values for e in response.embeddings]
+
+        if len(batch_embeddings) != len(batch):
+            raise ValueError(
+                f"Embedding mismatch: expected {len(batch)}, got {len(batch_embeddings)}"
+            )
+
+        all_embeddings.extend(batch_embeddings)
 
         progress.progress((i // batch_size + 1) / total_batches)
     
@@ -34,8 +40,8 @@ def get_embeddings(texts, batch_size=20):
 
 
 def embed_query(query):
-    response = genai.embed_content(
-    model=_model,
-        content=query
+    response = client.models.embed_content(
+        model=_model,
+        contents=query
     )
-    return response["embedding"]
+    return response.embeddings[0].values
