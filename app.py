@@ -21,8 +21,8 @@ def get_file_hash(file):
 # -----------------------------
 # STREAMLIT CONFIG
 # -----------------------------
-st.set_page_config(page_title="Personal Research Copilot")
-st.title("📄 Research Copilot Lite")
+st.set_page_config(page_title="Personal Research Assitant")
+st.title("📄 Personal Research Assitant")
 
 # Smooth scrolling
 st.markdown(
