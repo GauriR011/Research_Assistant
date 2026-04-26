@@ -18,7 +18,7 @@ def get_file_hash(file):
     file.seek(0)  # reset pointer after reading
     return hashlib.md5(file_bytes).hexdigest()
 
-st.set_page_config(page_title="Research Copilot Lite")
+st.set_page_config(page_title="Personal Research Copilot")
 
 st.title("Research Copilot Lite")
 
@@ -110,21 +110,61 @@ if query and st.session_state.processed:
         query_emb = embed_query(query)
         results = st.session_state.vector_store.search(query_emb, k=4)
 
-        answer = generate_answer(results, query)
+        # answer = generate_answer(results, query)
+        answer, source_map = generate_answer(results, query)
 
+    st.markdown("<a id='top'></a>", unsafe_allow_html=True)
+    
     st.subheader("Answer")
     st.write(answer)
 
-    # Sources
     st.subheader("Sources")
-    sources = set([r["metadata"]["source"] for r in results])
-    for s in sources:
-        st.write(f"- {s}")
 
-# Debug mode (bonus)
+    # Reverse mapping: number → filename
+    # reverse_map = {v: k for k, v in source_map.items()}
+
+    # for ref_id in sorted(reverse_map.keys()):
+    #     st.write(f"(Ref {ref_id}) {reverse_map[ref_id]}")
+
+    reverse_map = {v: k for k, v in source_map.items()}
+
+    for ref_id in sorted(reverse_map.keys()):
+        st.markdown(
+            f"<a href='#ref_{ref_id}'>(Source {ref_id})</a> {reverse_map[ref_id]}",
+            unsafe_allow_html=True
+        )
+
+
+
+
+    # # Sources
+    # st.subheader("Sources")
+    # sources = set([r["metadata"]["source"] for r in results])
+    # for s in sources:
+    #     st.write(f"- {s}")
+
+# Show chunks from documents
+# if st.checkbox("Show retrieved chunks"):
+#     if query and st.session_state.processed:
+#         for r in results:
+#             st.write("----")
+#             st.write(r["text"])
+#             st.write(r["metadata"])
+
 if st.checkbox("Show retrieved chunks"):
-    if query and st.session_state.processed:
-        for r in results:
-            st.write("----")
-            st.write(r["text"])
-            st.write(r["metadata"])
+    st.subheader("Retrieved Chunks")
+
+    for i, r in enumerate(results):
+        ref_id = list(source_map.values())[i] if i < len(source_map) else i+1
+
+        st.markdown(f"<a id='ref_{ref_id}'></a>", unsafe_allow_html=True)
+
+        st.markdown(f"### (Ref {ref_id}) - {r['metadata']['source']}")
+        st.write(r["text"])
+        st.write("---")
+
+
+st.markdown(
+    "<a href='#top'>⬆️ Back to Answer</a>",
+    unsafe_allow_html=True
+)
