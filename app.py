@@ -4,6 +4,19 @@ from utils.chunking import chunk_text
 from utils.embeddings import get_embeddings, embed_query
 from utils.retrieval import VectorStore
 from utils.rag_pipeline import generate_answer
+import os
+import hashlib
+
+# creating a cache directory
+# caching based on file content (by hashing the pdf) so that the same pdf is not reprocessed
+CACHE_DIR = "cache"
+os.makedirs(CACHE_DIR, exist_ok=True)
+
+# hash a pdf file
+def get_file_hash(file):
+    file_bytes = file.read()
+    file.seek(0)  # reset pointer after reading
+    return hashlib.md5(file_bytes).hexdigest()
 
 st.set_page_config(page_title="Research Copilot Lite")
 
@@ -26,11 +39,26 @@ uploaded_files = st.sidebar.file_uploader(
 
 if st.sidebar.button("Process Documents"):
     if uploaded_files:
+
         all_chunks = []
         all_metadata = []
+        cache_keys = []
 
         with st.spinner("Processing documents..."):
+
             for file in uploaded_files:
+                file_hash = get_file_hash(file)
+                cache_path = os.path.join(CACHE_DIR, file_hash)
+
+                if os.path.exists(cache_path + ".index"):
+                    st.info(f"Loaded from cache: {file.name}")
+                    store = VectorStore.load(cache_path)
+
+                    st.session_state.vector_store = store
+                    st.session_state.processed = True
+                    continue
+
+                # Otherwise process normally
                 text = extract_text_from_pdf(file)
                 chunks = chunk_text(text)
 
@@ -41,16 +69,38 @@ if st.sidebar.button("Process Documents"):
                         "chunk_id": i
                     })
 
-            embeddings = get_embeddings(all_chunks)
+                cache_keys.append((file_hash, file.name, chunks))
 
-            dim = len(embeddings[0])
-            store = VectorStore(dim)
-            store.add(embeddings, all_chunks, all_metadata)
+            # If new docs exist, then embed them
+            if all_chunks:
+                embeddings = get_embeddings(all_chunks)
 
-            st.session_state.vector_store = store
-            st.session_state.processed = True
+                dim = len(embeddings[0])
+                store = VectorStore(dim)
+                store.add(embeddings, all_chunks, all_metadata)
+
+                # Save cache per file
+                start = 0
+                for file_hash, name, chunks in cache_keys:
+                    count = len(chunks)
+
+                    sub_store = VectorStore(dim)
+                    sub_store.add(
+                        embeddings[start:start+count],
+                        all_chunks[start:start+count],
+                        all_metadata[start:start+count]
+                    )
+
+                    sub_store.save(os.path.join(CACHE_DIR, file_hash))
+                    start += count
+
+                st.session_state.vector_store = store
+                st.session_state.processed = True
 
         st.success("Documents processed!")
+
+
+
 
 # Main UI
 query = st.text_input("Ask a question about the papers:")

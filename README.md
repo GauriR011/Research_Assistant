@@ -9,9 +9,9 @@ pip install -r requirements.txt
 ```
 
 2) Add an API key
-Create a .env file and add the following line:
+Create a .env file under the research copilot folder (main project folder) and add the following line:
 ```{txt}
-GEMINI_API_KEY=your_key_here
+GEMINI_API_KEY=paste_your_key_here
 ```
 
 3) Run the app

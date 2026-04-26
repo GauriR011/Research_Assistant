@@ -1,13 +1,11 @@
 import os
-import google.generativeai as genai
+import google.genai as genai
 from dotenv import load_dotenv
 
 load_dotenv()
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-MODEL = genai.GenerativeModel("gemini-1.5-flash")
-
-PROMPT_TEMPLATE = """You are a research assistant helping with literature review.
+PROMPT_TEMPLATE = """You are a research assistant helping with literature review and methodolody of the research papers.
 
 Instructions:
 - Answer ONLY using the provided context
@@ -37,6 +35,9 @@ def generate_answer(chunks, query):
         user_query=query
     )
 
-    response = MODEL.generate_content(prompt)
+    response = client.models.generate_content(
+        model="gemini-flash-latest", # using the latest gemini flash model
+        contents=prompt
+    )
 
     return response.text

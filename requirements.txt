@@ -3,5 +3,5 @@ pymupdf
 faiss-cpu
 numpy
 python-dotenv
-google-generativeai
+google-genai
 tqdm

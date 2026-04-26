@@ -1,4 +1,5 @@
-def chunk_text(text, chunk_size=700, overlap=100):
+# increasing the chunk size to reduce the number of chunks
+def chunk_text(text, chunk_size=1200, overlap=200):
     chunks = []
     start = 0
 
