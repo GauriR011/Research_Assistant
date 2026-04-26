@@ -15,6 +15,7 @@ So the idea is to create a RAG-powered assistant that allows users to upload res
 Rather than simply summarizing individual documents, the system is designed to **connect information across papers**, enabling comparative analysis and faster knowledge synthesis.
 
 In essence, this project combines a personal pain point with modern AI techniques — RAG, vector embeddings, and LLMs — to create a more efficient and intuitive way of engaging with academic literature.
+
 ---
 
 ##  ## Features Implemented and Concepts Showcased
@@ -74,20 +75,20 @@ This project demonstrates core concepts in:
 
 ##  Project Structure
 
-├── app.py
-├── utils/
-│ ├── pdf_parser.py
-│ ├── chunking.py
-│ ├── embeddings.py
-│ ├── retrieval.py
-│ └── rag_pipeline.py
-├── cache/
-│ └── (stored FAISS indexes per document)
-├── requirements.txt
-└── README.md
+├── app.py    
+├── utils/    
+│ ├── pdf_parser.py    
+│ ├── chunking.py    
+│ ├── embeddings.py    
+│ ├── retrieval.py    
+│ └── rag_pipeline.py    
+├── cache/    
+│ └── (stored FAISS indexes per document)    
+├── requirements.txt    
+└── README.md    
 
 
-A glimpse of how the project works: 
+A glimpse of how the project works: [Personal Research Assistant Video.webm](https://github.com/user-attachments/assets/28cbc9f8-e08b-4857-ae4b-808ea9f4e86d)
 
 
 ### Instructions to run the Project:
