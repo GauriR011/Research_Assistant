@@ -7,29 +7,41 @@ from utils.rag_pipeline import generate_answer
 import os
 import hashlib
 
-# creating a cache directory
-# caching based on file content (by hashing the pdf) so that the same pdf is not reprocessed
+# -----------------------------
+# CACHE SETUP
+# -----------------------------
 CACHE_DIR = "cache"
 os.makedirs(CACHE_DIR, exist_ok=True)
 
-# hash a pdf file
 def get_file_hash(file):
     file_bytes = file.read()
-    file.seek(0)  # reset pointer after reading
+    file.seek(0)
     return hashlib.md5(file_bytes).hexdigest()
 
+# -----------------------------
+# STREAMLIT CONFIG
+# -----------------------------
 st.set_page_config(page_title="Personal Research Copilot")
+st.title("📄 Research Copilot Lite")
 
-st.title("Research Copilot Lite")
+# Smooth scrolling
+st.markdown(
+    "<style>html { scroll-behavior: smooth; }</style>",
+    unsafe_allow_html=True
+)
 
-# Session state
+# -----------------------------
+# SESSION STATE
+# -----------------------------
 if "vector_store" not in st.session_state:
     st.session_state.vector_store = None
 
 if "processed" not in st.session_state:
     st.session_state.processed = False
 
-# Sidebar
+# -----------------------------
+# SIDEBAR: UPLOAD + PROCESS
+# -----------------------------
 st.sidebar.header("Upload Papers")
 uploaded_files = st.sidebar.file_uploader(
     "Upload PDFs",
@@ -37,134 +49,147 @@ uploaded_files = st.sidebar.file_uploader(
     accept_multiple_files=True
 )
 
-if st.sidebar.button("Process Documents"):
-    if uploaded_files:
+if st.sidebar.button("Process Documents") and uploaded_files:
 
-        all_chunks = []
-        all_metadata = []
-        cache_keys = []
+    all_chunks = []
+    all_metadata = []
+    cache_keys = []
 
-        with st.spinner("Processing documents..."):
+    with st.spinner("Processing documents..."):
 
-            for file in uploaded_files:
-                file_hash = get_file_hash(file)
-                cache_path = os.path.join(CACHE_DIR, file_hash)
+        for file in uploaded_files:
+            file_hash = get_file_hash(file)
+            cache_path = os.path.join(CACHE_DIR, file_hash)
 
-                if os.path.exists(cache_path + ".index"):
-                    st.info(f"Loaded from cache: {file.name}")
-                    store = VectorStore.load(cache_path)
-
-                    st.session_state.vector_store = store
-                    st.session_state.processed = True
-                    continue
-
-                # Otherwise process normally
-                text = extract_text_from_pdf(file)
-                chunks = chunk_text(text)
-
-                for i, chunk in enumerate(chunks):
-                    all_chunks.append(chunk)
-                    all_metadata.append({
-                        "source": file.name,
-                        "chunk_id": i
-                    })
-
-                cache_keys.append((file_hash, file.name, chunks))
-
-            # If new docs exist, then embed them
-            if all_chunks:
-                embeddings = get_embeddings(all_chunks)
-
-                dim = len(embeddings[0])
-                store = VectorStore(dim)
-                store.add(embeddings, all_chunks, all_metadata)
-
-                # Save cache per file
-                start = 0
-                for file_hash, name, chunks in cache_keys:
-                    count = len(chunks)
-
-                    sub_store = VectorStore(dim)
-                    sub_store.add(
-                        embeddings[start:start+count],
-                        all_chunks[start:start+count],
-                        all_metadata[start:start+count]
-                    )
-
-                    sub_store.save(os.path.join(CACHE_DIR, file_hash))
-                    start += count
+            # -------------------------
+            # LOAD FROM CACHE
+            # -------------------------
+            if os.path.exists(cache_path + ".index"):
+                st.info(f"Loaded from cache: {file.name}")
+                store = VectorStore.load(cache_path)
 
                 st.session_state.vector_store = store
                 st.session_state.processed = True
+                continue
 
-        st.success("Documents processed!")
+            # -------------------------
+            # PROCESS PDF
+            # -------------------------
+            text = extract_text_from_pdf(file)
+            chunks = chunk_text(text)
 
+            for i, chunk in enumerate(chunks):
+                all_chunks.append(chunk)
+                all_metadata.append({
+                    "source": file.name,
+                    "chunk_id": i
+                })
 
+            cache_keys.append((file_hash, file.name, chunks))
 
+        # -------------------------
+        # EMBEDDINGS + FAISS BUILD
+        # -------------------------
+        if all_chunks:
+            embeddings = get_embeddings(all_chunks)
 
-# Main UI
+            dim = len(embeddings[0])
+            store = VectorStore(dim)
+            store.add(embeddings, all_chunks, all_metadata)
+
+            # Save per-document cache
+            start = 0
+            for file_hash, name, chunks in cache_keys:
+                count = len(chunks)
+
+                sub_store = VectorStore(dim)
+                sub_store.add(
+                    embeddings[start:start+count],
+                    all_chunks[start:start+count],
+                    all_metadata[start:start+count]
+                )
+
+                sub_store.save(os.path.join(CACHE_DIR, file_hash))
+                start += count
+
+            st.session_state.vector_store = store
+            st.session_state.processed = True
+
+    st.success("Documents processed successfully!")
+
+# -----------------------------
+# MAIN UI
+# -----------------------------
 query = st.text_input("Ask a question about the papers:")
 
 if query and st.session_state.processed:
+
     with st.spinner("Retrieving answer..."):
+
+        # -------------------------
+        # RETRIEVAL
+        # -------------------------
         query_emb = embed_query(query)
         results = st.session_state.vector_store.search(query_emb, k=4)
 
-        # answer = generate_answer(results, query)
-        answer, source_map = generate_answer(results, query)
+        # -------------------------
+        # CONSISTENT SOURCE MAPPING
+        # -------------------------
+        sources = list(dict.fromkeys([r["metadata"]["source"] for r in results]))
+        source_map = {source: i + 1 for i, source in enumerate(sources)}
 
-    st.markdown("<a id='top'></a>", unsafe_allow_html=True)
-    
+        # Attach ref_id
+        for r in results:
+            r["ref_id"] = source_map[r["metadata"]["source"]]
+
+        # -------------------------
+        # RAG ANSWER
+        # -------------------------
+        answer = generate_answer(results, query)
+
+    # -----------------------------
+    # ANCHOR FOR BACK BUTTON
+    # -----------------------------
+    st.markdown("<div id='top'></div>", unsafe_allow_html=True)
+
+    # -----------------------------
+    # ANSWER SECTION
+    # -----------------------------
     st.subheader("Answer")
     st.write(answer)
 
+    # -----------------------------
+    # SOURCES (CLICKABLE)
+    # -----------------------------
     st.subheader("Sources")
 
-    # Reverse mapping: number → filename
-    # reverse_map = {v: k for k, v in source_map.items()}
-
-    # for ref_id in sorted(reverse_map.keys()):
-    #     st.write(f"(Ref {ref_id}) {reverse_map[ref_id]}")
-
-    reverse_map = {v: k for k, v in source_map.items()}
-
-    for ref_id in sorted(reverse_map.keys()):
+    for source, ref_id in source_map.items():
         st.markdown(
-            f"<a href='#ref_{ref_id}'>(Source {ref_id})</a> {reverse_map[ref_id]}",
-            unsafe_allow_html=True
+            f"[Source {ref_id}](#ref_{ref_id}) — {source}"
         )
 
-
-
-
-    # # Sources
-    # st.subheader("Sources")
-    # sources = set([r["metadata"]["source"] for r in results])
-    # for s in sources:
-    #     st.write(f"- {s}")
-
-# Show chunks from documents
-# if st.checkbox("Show retrieved chunks"):
-#     if query and st.session_state.processed:
-#         for r in results:
-#             st.write("----")
-#             st.write(r["text"])
-#             st.write(r["metadata"])
-
-if st.checkbox("Show retrieved chunks"):
+    # -----------------------------
+    # RETRIEVED CHUNKS (FIXED UX)
+    # -----------------------------
     st.subheader("Retrieved Chunks")
 
-    for i, r in enumerate(results):
-        ref_id = list(source_map.values())[i] if i < len(source_map) else i+1
+    grouped = {}
+    for r in results:
+        grouped.setdefault(r["ref_id"], []).append(r)
 
-        st.markdown(f"<a id='ref_{ref_id}'></a>", unsafe_allow_html=True)
+    for ref_id, chunks in grouped.items():
 
-        st.markdown(f"### (Ref {ref_id}) - {r['metadata']['source']}")
-        st.write(r["text"])
-        st.write("---")
+        # Anchor target
+        st.markdown(f"<div id='ref_{ref_id}'></div>", unsafe_allow_html=True)
 
+        with st.expander(f"(Source {ref_id}) Show chunks"):
 
-st.markdown(
-    "<a href='#top'>⬆️ Back to Answer</a>",
-    unsafe_allow_html=True
-)
+            for c in chunks:
+                st.markdown(f"**Source file:** {c['metadata']['source']}")
+                st.write(c["text"])
+                st.write("---")
+
+    # -----------------------------
+    # BACK TO TOP
+    # -----------------------------
+    st.markdown("[⬆️ Back to Answer](#top)")
