@@ -18,7 +18,7 @@ In essence, this project combines a personal pain point with modern AI technique
 
 ---
 
-##  ## Features Implemented and Concepts Showcased
+## Features Implemented and Concepts Showcased
 
 The goal of this project is to build a **personal research assistant** that can:
 
