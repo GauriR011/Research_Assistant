@@ -3,6 +3,8 @@ import google.genai as genai
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# initializing the Gemini API key
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 PROMPT_TEMPLATE = """
@@ -24,11 +26,14 @@ Question:
 {user_query}
 """
 
+# Adding inline refereces/sources into the text genreated by the LLM
 def format_context(chunks):
     context = ""
 
     for chunk in chunks:
-        ref_id = chunk["ref_id"]
+        # reference id of the chunk (tells the LLM which document did the text come from)
+        ref_id = chunk["ref_id"] 
+        # adding the reference to text
         context += f"{chunk['text']}\n(Ref {ref_id})\n\n"
 
     return context
@@ -38,14 +43,18 @@ def format_context(chunks):
 def generate_answer(chunks, query):
     context = format_context(chunks)
 
+
+    # injecting user query and geneated context into the template 
     prompt = PROMPT_TEMPLATE.format(
         retrieved_chunks=context,
         user_query=query
     )
 
+    # LMM response object
     response = client.models.generate_content(
         model= "gemini-flash-latest",# using the latest gemini flash model
         contents=prompt
     )
 
+    # return text component of the LMM response object
     return response.text
