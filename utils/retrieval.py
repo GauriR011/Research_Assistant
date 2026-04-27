@@ -17,7 +17,7 @@ class VectorStore:
         assert len(embeddings) == len(texts) == len(metadatas), \
             f"Mismatch: {len(embeddings)}, {len(texts)}, {len(metadatas)}"
 
-        # converting embeddings into a NumPy array using 32-bit floats
+        # converting embeddings into a numpy array using 32-bit floats
         vectors = np.array(embeddings).astype("float32")
         self.index.add(vectors) # passing the vectors to FAISS
 
@@ -32,7 +32,7 @@ class VectorStore:
 
         results = []
 
-        # we will uses these indices to fetch the actal text and metadata from the lists
+        # we will use these indices to fetch the actual text and metadata from the lists
         for idx in indices[0]:
             if idx == -1 or idx >= len(self.texts):
                 continue
@@ -56,8 +56,8 @@ class VectorStore:
             }, f)
 
     @classmethod
-    #  reconstructing the class from the index and pickled files so we won't need to re-process 
-    # the PDFs every time the app is restarted.
+    # reconstructing the class from the index and pickled files so we won't need to re-process 
+    # the same PDFs every time the app is restarted.
     def load(cls, path):
         # Load FAISS index
         index = faiss.read_index(path + ".index")
@@ -77,4 +77,4 @@ class VectorStore:
 
     # To summarize the, 
     # On reading new data: Text --→ Embedding --→ FAISS Index.
-    # Closest matching: Question --→ Query Embedding --→ FAISS search --→ Top k Text Chunks.
+    # Closest chunk matching: User Question --→ Query Embedding --→ FAISS search --→ Top k Text Chunks.
