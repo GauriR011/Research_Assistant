@@ -67,7 +67,7 @@ This project demonstrates core concepts in:
 - **Backend Logic:** Python  
 - **Embeddings:** Google Gemini Embedding API  
 - **LLM:** Gemini Flash 
-- **Vector Database:** FAISS (Facebook AI Similarity Search)  
+- **Vector Search:** FAISS (Facebook AI Similarity Search)  
 - **PDF Parsing:** PyPDF-based utility  
 - **Data Handling:** NumPy, Pickle  
 
