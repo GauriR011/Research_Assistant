@@ -1,6 +1,6 @@
 #  Personal Research Assistant
 
-Writing a thesis is one of the most demanding parts of a university degree, especially in the final year. Students are often required to go through 10, 20, or sometimes even 50 research papers just to build a solid literature review and define a clear project methodology. This process is not only time-consuming but also mentally intensive, requiring sustained focus to extract and compare relevant insights across dense academic material.
+Writing a thesis is one of the most demanding parts of a university degree, especially in the final year. Students are often required to go through 10, 20, or sometimes even 50 research papers just to build a solid literature review and define a clear project methodology. This is not only time-consuming but also a mentally demanding process, requiring sustained focus to extract and compare relevant insights across dense academic material.
 
 Having gone through this experience myself, I realized how challenging it is to efficiently synthesize information across multiple papers while keeping track of key ideas such as methodologies, datasets, and model choices. A significant amount of time is spent repeatedly reading, summarizing, and cross-referencing information that could otherwise be streamlined.
 
